@@ -1,10 +1,14 @@
-import 'dotenv/config';
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { router } from './routes';
+import { db } from './db';
 
-// You can specify any property from the node-postgres connection options
-const db = drizzle({ 
-  connection: { 
-    connectionString: process.env.DATABASE_URL!,
-    ssl: true
-  }
+export { db };
+
+const server = Bun.serve({
+  port: 4000,
+  async fetch(req) {
+    const response = await router.handle(req);
+    if (response) return response;
+
+    return new Response("Not Found", { status: 404 });
+  },
 });
