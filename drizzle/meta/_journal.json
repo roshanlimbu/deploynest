@@ -15,6 +15,20 @@
       "when": 1779964632025,
       "tag": "0001_happy_scream",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780573028673,
+      "tag": "0002_aspiring_ozymandias",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1780574053623,
+      "tag": "0003_outstanding_morlun",
+      "breakpoints": true
     }
   ]
 }
