@@ -6,7 +6,9 @@
   "scripts": {
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "dev": "bun run ./src/index.ts",
+    "route:list": "bun run ./src/route-list.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",
