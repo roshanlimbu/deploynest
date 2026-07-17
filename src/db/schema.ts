@@ -13,6 +13,7 @@ export const projectsTable = pgTable("projects", {
   name: varchar({ length: 255 }).notNull(),
   repoUrl: varchar("repo_url", { length: 255 }).notNull(),
   branch: varchar({ length: 255 }).notNull().default("main"),
+  appType: varchar("app_type", { length: 50 }).notNull().default("dockerfile"),
   userId: integer("user_id")
     .notNull()
     .references(() => users.id),
@@ -33,6 +34,7 @@ export const deploymentsTable = pgTable("deployments", {
   status: deploymentStatusEnum().notNull().default("pending"),
   containerId: varchar("container_id", { length: 255 }),
   port: integer(),
+  domain: varchar({ length: 255 }),
   logs: text(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
