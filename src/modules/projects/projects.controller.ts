@@ -101,14 +101,22 @@ export async function deleteProjectController(
   req: Request,
   params: RouteParams,
 ) {
-  const authUser = getAuthenticatedUser(req);
-  if (!authUser) return unauthorizedResponse();
+  try {
+    const authUser = getAuthenticatedUser(req);
+    if (!authUser) return unauthorizedResponse();
 
-  const projectId = parseProjectId(params);
-  if (!projectId) return notFoundResponse();
+    const projectId = parseProjectId(params);
+    if (!projectId) return notFoundResponse();
 
-  const project = await deleteProject(authUser.id, projectId);
-  if (!project) return notFoundResponse();
+    const project = await deleteProject(authUser.id, projectId);
+    if (!project) return notFoundResponse();
 
-  return Response.json({ message: "Project deleted" }, { status: 200 });
+    return Response.json({ message: "Project deleted" }, { status: 200 });
+  } catch (error) {
+    console.error("Delete project error:", error);
+    return Response.json(
+      { message: "Internal server error" },
+      { status: 500 },
+    );
+  }
 }
