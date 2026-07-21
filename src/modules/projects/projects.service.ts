@@ -53,7 +53,7 @@ export async function createProject(userId: number, input: ProjectInput) {
     await createProjectDatabase(project.id, input.database.engine);
   }
 
-  return project;
+  return getProject(userId, project.id);
 }
 
 export async function updateProject(
@@ -89,7 +89,7 @@ export async function updateProject(
     await deleteProjectDatabase(projectId);
   }
 
-  return project;
+  return getProject(userId, projectId);
 }
 
 export async function deleteProject(userId: number, projectId: number) {
