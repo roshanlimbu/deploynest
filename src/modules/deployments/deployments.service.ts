@@ -104,5 +104,34 @@ export async function listDeploymentLogs(
     })
     .from(deploymentLogsTable)
     .where(eq(deploymentLogsTable.deploymentId, deploymentId))
-    .orderBy(asc(deploymentLogsTable.id));
+    .orderBy(asc(deploymentLogsTable.createdAt));
+}
+
+export async function deleteDeployment(userId: number, deploymentId: number) {
+  const deployment = await db
+    .select({
+      id: deploymentsTable.id,
+      projectId: deploymentsTable.projectId,
+    })
+    .from(deploymentsTable)
+    .innerJoin(projectsTable, eq(deploymentsTable.projectId, projectsTable.id))
+    .where(
+      and(
+        eq(deploymentsTable.id, deploymentId),
+        eq(projectsTable.userId, userId),
+      ),
+    )
+    .limit(1)
+    .then((res) => res[0]);
+
+  if (!deployment) return null;
+
+  return db.transaction(async (tx) => {
+    await tx.insert(deploymentJobsTable).values({
+      deploymentId: deployment.id,
+      jobType: "delete",
+    });
+
+    return deployment;
+  });
 }

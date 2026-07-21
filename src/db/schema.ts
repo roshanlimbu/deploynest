@@ -30,7 +30,7 @@ export const deploymentsTable = pgTable("deployments", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   projectId: integer("project_id")
     .notNull()
-    .references(() => projectsTable.id),
+    .references(() => projectsTable.id, { onDelete: "cascade" }),
   status: deploymentStatusEnum().notNull().default("pending"),
   containerId: varchar("container_id", { length: 255 }),
   port: integer(),
@@ -50,7 +50,7 @@ export const deploymentJobsTable = pgTable("deployment_jobs", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   deploymentId: integer("deployment_id")
     .notNull()
-    .references(() => deploymentsTable.id),
+    .references(() => deploymentsTable.id, { onDelete: "cascade" }),
   status: jobStatusEnum().notNull().default("pending"),
   jobType: varchar("job_type", { length: 50 }).notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -63,7 +63,7 @@ export const deploymentLogsTable = pgTable("deployment_logs", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   deploymentId: integer("deployment_id")
     .notNull()
-    .references(() => deploymentsTable.id),
+    .references(() => deploymentsTable.id, { onDelete: "cascade" }),
   message: text().notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

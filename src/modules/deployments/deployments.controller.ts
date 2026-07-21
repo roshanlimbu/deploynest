@@ -7,6 +7,7 @@ import {
   getDeployment,
   listDeploymentLogs,
   listDeployments,
+  deleteDeployment,
 } from "./deployments.service";
 
 type RouteParams = Record<string, string>;
@@ -39,7 +40,37 @@ export async function createDeploymentController(
     return Response.json({ deployment }, { status: 201 });
   } catch (error) {
     console.error(error);
-    return Response.json({ message: "Internal server error" }, { status: 500 });
+    return Response.json(
+      { message: "Internal server error" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function deleteDeploymentController(
+  req: Request,
+  params: RouteParams,
+) {
+  try {
+    const authUser = getAuthenticatedUser(req);
+    if (!authUser) return unauthorizedResponse();
+
+    const deploymentId = Number(params.id);
+    if (!Number.isInteger(deploymentId)) return notFoundResponse();
+
+    const deployment = await deleteDeployment(authUser.id, deploymentId);
+    if (!deployment) return notFoundResponse();
+
+    return Response.json(
+      { message: "Deployment deletion job queued." },
+      { status: 202 },
+    );
+  } catch (error) {
+    console.error(error);
+    return Response.json(
+      { message: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
 
