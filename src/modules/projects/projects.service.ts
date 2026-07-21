@@ -28,6 +28,7 @@ export async function createProject(userId: number, input: ProjectInput) {
       name: input.name,
       repoUrl: input.repoUrl,
       branch: input.branch,
+      appType: input.appType,
       userId,
     })
     .returning();
@@ -46,6 +47,7 @@ export async function updateProject(
       name: input.name,
       repoUrl: input.repoUrl,
       branch: input.branch,
+      appType: input.appType,
     })
     .where(and(eq(projectsTable.id, projectId), eq(projectsTable.userId, userId)))
     .returning();

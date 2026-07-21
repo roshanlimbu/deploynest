@@ -1,0 +1,1 @@
+ALTER TABLE "deployments" ADD COLUMN "domain" varchar(255);

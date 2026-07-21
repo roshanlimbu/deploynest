@@ -1,0 +1,1 @@
+ALTER TABLE "projects" ADD COLUMN "app_type" varchar(50) DEFAULT 'dockerfile' NOT NULL;
