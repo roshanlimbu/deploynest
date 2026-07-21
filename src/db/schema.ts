@@ -1,4 +1,4 @@
-import { integer, pgEnum, pgTable, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { integer, pgEnum, pgTable, text, timestamp, varchar, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -65,5 +65,25 @@ export const deploymentLogsTable = pgTable("deployment_logs", {
     .notNull()
     .references(() => deploymentsTable.id, { onDelete: "cascade" }),
   message: text().notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const dbEngineEnum = pgEnum("db_engine", ["mysql", "postgresql"]);
+export const dbStatusEnum = pgEnum("db_status", ["pending", "running", "stopped", "failed"]);
+
+export const projectDatabasesTable = pgTable("project_databases", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  projectId: integer("project_id")
+    .notNull()
+    .unique()
+    .references(() => projectsTable.id, { onDelete: "cascade" }),
+  engine: dbEngineEnum().notNull(),
+  dbName: varchar("db_name", { length: 255 }).notNull(),
+  dbUser: varchar("db_user", { length: 255 }).notNull(),
+  dbPassword: varchar("db_password", { length: 255 }).notNull(),
+  containerName: varchar("container_name", { length: 255 }),
+  internalHost: varchar("internal_host", { length: 255 }),
+  port: integer(),
+  status: dbStatusEnum().notNull().default("pending"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

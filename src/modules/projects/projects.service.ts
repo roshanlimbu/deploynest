@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "../../db";
-import { deploymentsTable, deploymentJobsTable, deploymentLogsTable, projectsTable } from "../../db/schema";
+import { deploymentsTable, deploymentJobsTable, deploymentLogsTable, projectsTable, projectDatabasesTable } from "../../db/schema";
 import type { ProjectInput } from "./projects.validation";
 
 export async function listProjects(userId: number) {
@@ -18,7 +18,23 @@ export async function getProject(userId: number, projectId: number) {
     ),
   });
 
-  return project ?? null;
+  if (!project) return null;
+
+  const database = await db.query.projectDatabasesTable.findFirst({
+    where: eq(projectDatabasesTable.projectId, projectId),
+  });
+
+  return {
+    ...project,
+    database: database
+      ? {
+          id: database.id,
+          engine: database.engine,
+          dbName: database.dbName,
+          status: database.status,
+        }
+      : null,
+  };
 }
 
 export async function createProject(userId: number, input: ProjectInput) {
@@ -32,6 +48,10 @@ export async function createProject(userId: number, input: ProjectInput) {
       userId,
     })
     .returning();
+
+  if (input.database?.enabled && project) {
+    await createProjectDatabase(project.id, input.database.engine);
+  }
 
   return project;
 }
@@ -52,7 +72,24 @@ export async function updateProject(
     .where(and(eq(projectsTable.id, projectId), eq(projectsTable.userId, userId)))
     .returning();
 
-  return project ?? null;
+  if (!project) return null;
+
+  // Handle database toggle
+  const existingDb = await getProjectDatabase(projectId);
+
+  if (input.database?.enabled) {
+    if (!existingDb) {
+      await createProjectDatabase(projectId, input.database.engine);
+    } else if (existingDb.engine !== input.database.engine) {
+      // Engine changed: delete old, create new
+      await deleteProjectDatabase(projectId);
+      await createProjectDatabase(projectId, input.database.engine);
+    }
+  } else if (existingDb) {
+    await deleteProjectDatabase(projectId);
+  }
+
+  return project;
 }
 
 export async function deleteProject(userId: number, projectId: number) {
@@ -83,6 +120,9 @@ export async function deleteProject(userId: number, projectId: number) {
     await db.delete(deploymentsTable).where(inArray(deploymentsTable.id, deploymentIds));
   }
 
+  // Delete project database config (cascade will handle it, but explicit for clarity)
+  await deleteProjectDatabase(projectId);
+
   // Now safe to delete the project
   const [deleted] = await db
     .delete(projectsTable)
@@ -90,4 +130,49 @@ export async function deleteProject(userId: number, projectId: number) {
     .returning({ id: projectsTable.id });
 
   return deleted ?? null;
+}
+
+// ── Database provisioning helpers ─────────────────────────────────────
+
+function generateCredentials(projectId: number) {
+  const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
+  return {
+    dbName: `deploynest_p${projectId}`,
+    dbUser: `dn_user_${suffix}`,
+    dbPassword: crypto.randomUUID(),
+  };
+}
+
+export async function createProjectDatabase(projectId: number, engine: "mysql" | "postgresql") {
+  const creds = generateCredentials(projectId);
+  const containerName = `deploynest-db-${projectId}`;
+  const port = engine === "mysql" ? 3306 : 5432;
+
+  const [record] = await db
+    .insert(projectDatabasesTable)
+    .values({
+      projectId,
+      engine,
+      dbName: creds.dbName,
+      dbUser: creds.dbUser,
+      dbPassword: creds.dbPassword,
+      containerName,
+      internalHost: containerName,
+      port,
+    })
+    .returning();
+
+  return record;
+}
+
+export async function getProjectDatabase(projectId: number) {
+  return db.query.projectDatabasesTable.findFirst({
+    where: eq(projectDatabasesTable.projectId, projectId),
+  }) ?? null;
+}
+
+export async function deleteProjectDatabase(projectId: number) {
+  await db
+    .delete(projectDatabasesTable)
+    .where(eq(projectDatabasesTable.projectId, projectId));
 }

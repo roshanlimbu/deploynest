@@ -3,6 +3,10 @@ export type ProjectInput = {
   repoUrl: string;
   branch: string;
   appType: "laravel" | "dockerfile";
+  database?: {
+    enabled: boolean;
+    engine: "mysql" | "postgresql";
+  };
 };
 
 type ProjectValidationResult =
@@ -29,6 +33,18 @@ export function validateProjectInput(body: any): ProjectValidationResult {
     };
   }
 
+  let database: ProjectInput["database"];
+  if (body.database && body.database.enabled) {
+    const engine = String(body.database.engine ?? "").trim();
+    if (engine !== "mysql" && engine !== "postgresql") {
+      return {
+        success: false,
+        message: "database.engine must be mysql or postgresql",
+      };
+    }
+    database = { enabled: true, engine };
+  }
+
   return {
     success: true,
     data: {
@@ -36,6 +52,7 @@ export function validateProjectInput(body: any): ProjectValidationResult {
       repoUrl,
       branch,
       appType,
+      database,
     },
   };
 }
